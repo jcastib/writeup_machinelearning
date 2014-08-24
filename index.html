@@ -1,0 +1,226 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Writeup machinelearning by jocaqui</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Writeup machinelearning</h1>
+        <p></p>
+
+        <p class="view"><a href="https://github.com/jocaqui/writeup_machinelearning">View the Project on GitHub <small>jocaqui/writeup_machinelearning</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/jocaqui/writeup_machinelearning/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/jocaqui/writeup_machinelearning/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/jocaqui/writeup_machinelearning">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <p>&lt;!DOCTYPE html&gt;</p>
+
+<p></p>
+
+<p></p>
+
+<p></p>
+
+<p></p>Assignment Writeup - Prediction of how was Exercise Performed<p></p>
+
+code{white-space: pre;}<p></p>
+
+
+  pre:not([class]) {
+    background-color: white;
+  }
+<p></p>
+
+<p></p>
+
+
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+<div>
+
+
+<div>
+<h1>
+<a name="assignment-writeup---prediction-of-how-was-exercise-performed" class="anchor" href="#assignment-writeup---prediction-of-how-was-exercise-performed"><span class="octicon octicon-link"></span></a>Assignment Writeup - Prediction of how was Exercise Performed</h1>
+</div>
+
+<p>Human activity recognition research has traditionally focused on discriminating between different activities. However, the “how (well)” investigation has only received little attention so far, even though it potentially provides useful information for a large variety of applications,such as sports training (<a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a>).</p>
+
+<p>For the prediction of how welll individuals performed the assigned exercise six young health participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).</p>
+
+<p>This report aims to use machine learning algoritmhs to predict the class of exercise the individuals was performing by using meaurements available from devices such as Jawbone Up, Nike FuelBand, and Fitbit.</p>
+
+<div>
+<h3>
+<a name="data-cleaning" class="anchor" href="#data-cleaning"><span class="octicon octicon-link"></span></a>Data Cleaning</h3>
+<p>The data for this project come was obteined from <a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a>. Two data set were available a training set and a test set for which 20 individuals without any classification for the class of exercise was available.</p>
+<pre><code>#Data loading
+setwd("~/Desktop/coursera/R_courses/machine_learning")
+pmlTrain&lt;-read.csv("pml-training.csv", header=T, na.strings=c("NA", "#DIV/0!"))
+pmlTest&lt;-read.csv("pml-testing.csv", header=T, na.string=c("NA", "#DIV/0!"))</code></pre>
+<p>Training data was partitioned and preprocessed using the code described below. In brief, all variables with at least one “NA” were excluded from the analysis. Variables related to time and user information were excluded for a total of 51 variables and 19622 class measurements. Same variables were mainteined in the test data set (Validation dataset) to be used for predicting the 20 test cases provided.</p>
+<pre><code>## NA exclusion for all available variables
+noNApmlTrain&lt;-pmlTrain[, apply(pmlTrain, 2, function(x) !any(is.na(x)))] 
+dim(noNApmlTrain)</code></pre>
+<pre><code>## [1] 19622    60</code></pre>
+<pre><code>## variables with user information, time and undefined
+cleanpmlTrain&lt;-noNApmlTrain[,-c(1:8)]
+dim(cleanpmlTrain)</code></pre>
+<pre><code>## [1] 19622    52</code></pre>
+<pre><code>## 20 test cases provided clean info - Validation data set
+cleanpmltest&lt;-pmlTest[,names(cleanpmlTrain[,-52])]
+dim(cleanpmltest)</code></pre>
+<pre><code>## [1] 20 51</code></pre>
+</div>
+
+<div>
+<h3>
+<a name="data-partitioning-and-prediction-process" class="anchor" href="#data-partitioning-and-prediction-process"><span class="octicon octicon-link"></span></a>Data Partitioning and Prediction Process</h3>
+<p>The cleaned downloaded data set was subset in order to generate a test set independent from the 20 cases provided set. Partitioning was performed to obtain a 75% training set and a 25% test set.</p>
+<pre><code>#data cleaning
+library(caret)
+inTrain&lt;-createDataPartition(y=cleanpmlTrain$classe, p=0.75,list=F)
+training&lt;-cleanpmlTrain[inTrain,] 
+test&lt;-cleanpmlTrain[-inTrain,] 
+#Training and test set dimensions
+dim(training)</code></pre>
+<pre><code>## [1] 14718    52</code></pre>
+<pre><code>dim(test)</code></pre>
+<pre><code>## [1] 4904   52</code></pre>
+</div>
+
+<div>
+<h3>
+<a name="results-and-conclusions" class="anchor" href="#results-and-conclusions"><span class="octicon octicon-link"></span></a>Results and Conclusions</h3>
+<p>Random forest trees were generated for the training dataset using cross-validation. Then the generated algorithm was examnined under the partitioned training set to examine the accuracy and estimated error of prediction. By using 51 predictors for five classes using cross-validation at a 5-fold an accuracy of 99.2% with a 95% CI [0.989-0.994] was achieved accompanied by a Kappa value of 0.99.</p>
+<pre><code>library(caret)
+set.seed(13333)
+fitControl2&lt;-trainControl(method="cv", number=5, allowParallel=T, verbose=T)
+rffit&lt;-train(classe~.,data=training, method="rf", trControl=fitControl2, verbose=F)</code></pre>
+<pre><code>## + Fold1: mtry= 2 
+## - Fold1: mtry= 2 
+## + Fold1: mtry=26 
+## - Fold1: mtry=26 
+## + Fold1: mtry=51 
+## - Fold1: mtry=51 
+## + Fold2: mtry= 2 
+## - Fold2: mtry= 2 
+## + Fold2: mtry=26 
+## - Fold2: mtry=26 
+## + Fold2: mtry=51 
+## - Fold2: mtry=51 
+## + Fold3: mtry= 2 
+## - Fold3: mtry= 2 
+## + Fold3: mtry=26 
+## - Fold3: mtry=26 
+## + Fold3: mtry=51 
+## - Fold3: mtry=51 
+## + Fold4: mtry= 2 
+## - Fold4: mtry= 2 
+## + Fold4: mtry=26 
+## - Fold4: mtry=26 
+## + Fold4: mtry=51 
+## - Fold4: mtry=51 
+## + Fold5: mtry= 2 
+## - Fold5: mtry= 2 
+## + Fold5: mtry=26 
+## - Fold5: mtry=26 
+## + Fold5: mtry=51 
+## - Fold5: mtry=51 
+## Aggregating results
+## Selecting tuning parameters
+## Fitting mtry = 26 on full training set</code></pre>
+<pre><code>predrf&lt;-predict(rffit, newdata=test)
+confusionMatrix(predrf, test$classe)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1394    6    0    0    0
+##          B    0  938    4    0    0
+##          C    0    5  848    7    0
+##          D    0    0    3  796    3
+##          E    1    0    0    1  898
+## 
+## Overall Statistics
+##                                         
+##                Accuracy : 0.994         
+##                  95% CI : (0.991, 0.996)
+##     No Information Rate : 0.284         
+##     P-Value [Acc &gt; NIR] : &lt;2e-16        
+##                                         
+##                   Kappa : 0.992         
+##  Mcnemar's Test P-Value : NA            
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity             0.999    0.988    0.992    0.990    0.997
+## Specificity             0.998    0.999    0.997    0.999    1.000
+## Pos Pred Value          0.996    0.996    0.986    0.993    0.998
+## Neg Pred Value          1.000    0.997    0.998    0.998    0.999
+## Prevalence              0.284    0.194    0.174    0.164    0.184
+## Detection Rate          0.284    0.191    0.173    0.162    0.183
+## Detection Prevalence    0.285    0.192    0.175    0.164    0.184
+## Balanced Accuracy       0.999    0.994    0.994    0.994    0.998</code></pre>
+<pre><code>pred20&lt;-predict(rffit, newdata=cleanpmltest)
+# Output for the prediction of the 20 cases provided
+pred20</code></pre>
+<pre><code>##  [1] B A B A A E D B A A B C B A E E A B B B
+## Levels: A B C D E</code></pre>
+<p>A boosting algorithm was also run to confirm and be able to compare predictions. Data is not shown but the boosting approach presented less accuracy (96%) (Data not shown). However, when the predictions for the 20 test cases were compared match was same for both ran algorimths.</p>
+<pre><code>fitControl2&lt;-trainControl(method="cv", number=5, allowParallel=T, verbose=T)
+gmbfit&lt;-train(classe~.,data=training, method="gbm", trControl=fitControl2, verbose=F)
+gmbfit$finalModel
+class(gmbfit)
+predgmb&lt;-predict(gmbfit, newdata=test)
+confusionMatrix(predgmb, test$classe)
+predtrain&lt;-predict(gmbfit, newdata=training)
+confusionMatrix(predtrain, training$classe)
+predtrain&lt;-predict(gmbfit, newdata=training)
+confusionMatrix(predtrain, training$classe)</code></pre>
+<p>Once, the predictions were obtained for the 20 test cases provided, the below shown script was used to obtain single text files to be uploaded to the courses web site to comply with the submission assigment. 20 out of 20 hits also confirmed the accuracy of the obtained models.</p>
+<pre><code>getwd()
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+pml_write_files(pred20)</code></pre>
+</div>
+
+<p></p>
+</div>
+
+<p>
+</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/jocaqui">jocaqui</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
